@@ -1,0 +1,196 @@
+{
+  "name": "roadmap planner",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Student Roadmap Creator",
+        "formDescription": "This Form helps in creating a 6 months study plan for students",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "placeholder": "enter your name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Year",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1"
+                  },
+                  {
+                    "option": "2"
+                  },
+                  {
+                    "option": "3"
+                  },
+                  {
+                    "option": "4"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Interested in which technology",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "UI/UX"
+                  },
+                  {
+                    "option": "Fullstack development"
+                  },
+                  {
+                    "option": "Data Science"
+                  },
+                  {
+                    "option": "Devops"
+                  },
+                  {
+                    "option": "AI/ML"
+                  },
+                  {
+                    "option": "Cloud Computing"
+                  },
+                  {
+                    "option": "Cybersecurity"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "placeholder": "student@example.com",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -540,
+        -60
+      ],
+      "id": "d50eb18c-ee38-4e4b-8c16-190faa2e9c7b",
+      "name": "On form submission",
+      "webhookId": "ff25800a-d584-4564-8326-376916c70160"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a helpful assistant that helps a student by creating a 6-month study plan in {{ $json['Interested in which technology'] }} tailored for a year {{ $json.Year }} student. Include monthly topics, free/paid resources, and one mini project per month. End with tips for resume and portfolio building.",
+        "options": {
+          "systemMessage": "You are a helpful assistant."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -60
+      ],
+      "id": "9df1a224-9523-46bf-ab29-2a66d2a93e7d",
+      "name": "AI Agent",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        160
+      ],
+      "id": "796a4807-a3bb-4705-b665-3ef1ed287a8f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MiMjJhoi2CgfvTRQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "email": "={{ $json.Email }}",
+        "subject": "Your Personalized 6-Month Roadmap",
+        "text": "={{ $json[\"data\"] }}"
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        -60
+      ],
+      "id": "b3f8fd23-44f3-49f2-8329-674ea6b6d3f2",
+      "name": "Email Roadmap"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Email Roadmap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "revamped-v2-roadmap-planner",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "improved-v2-with-email"
+  },
+  "id": "yoNYW9HH8altKz3v",
+  "tags": [
+    "roadmap",
+    "student",
+    "AI",
+    "GPT",
+    "OpenAI"
+  ]
+}
