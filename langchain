@@ -1,0 +1,61 @@
+import os
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
+
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", None)
+model_name = "meta-llama/Llama-2-7b-chat-hf"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+torch_dtype = torch.float16 if device == "cuda" else torch.float32
+
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=HUGGINGFACE_TOKEN)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch_dtype,
+    device_map="auto",
+    use_auth_token=HUGGINGFACE_TOKEN
+)
+model.eval()
+
+system_prompt = "You are a helpful, respectful, and honest assistant."
+chat_history = []
+
+def format_prompt(history, user_input):
+    full_prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n"
+    for (user_msg, assistant_msg) in history:
+        full_prompt += f"{user_msg.strip()} [/INST] {assistant_msg.strip()} </s><s>[INST] "
+    full_prompt += f"{user_input.strip()} [/INST]"
+    return full_prompt
+
+generation_args = {
+    "max_new_tokens": 512,
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "do_sample": True,
+    "pad_token_id": tokenizer.eos_token_id,
+    "eos_token_id": tokenizer.eos_token_id,
+}
+
+streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+
+def chat():  
+    print("\n🦙 Welcome to the Llama 2 Chatbot!")
+    print("💡 Tip: Type 'exit' or 'quit' to end the conversation.\n")
+    while True:
+        user_input = input("🧑 You: ")
+        if user_input.strip().lower() in {"exit", "quit"}:
+            print("👋 Goodbye!")
+            break
+        prompt = format_prompt(chat_history, user_input)
+        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+        print("🤖 Assistant: ", end="", flush=True)
+        output = model.generate(
+            input_ids=input_ids,
+            streamer=streamer,
+            **generation_args
+        )
+        decoded = tokenizer.decode(output[0], skip_special_tokens=True)
+        assistant_reply = decoded.split("[/INST]")[-1].strip()
+        chat_history.append((user_input, assistant_reply))
+
+if __name__ == "__main__":
+    chat()
